@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">Report an Issue</h4>
+            </div>
+            <div class="card-body">
+                <form action="/report" method="post" enctype="multipart/form-data">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Your Mobile Number</label>
+                        <input type="tel" name="mobile_number" class="form-control" required placeholder="Must be registered first">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <select name="category_id" class="form-select" required>
+                            <option value="1">Dead Animal</option>
+                            <option value="2">Dustbins not cleaned</option>
+                            <option value="3">Garbage dump</option>
+                            <option value="6">No electricity in public toilet</option>
+                            <option value="10">Open Manholes</option>
+                            <option value="11">Sewerage Overflow</option>
+                            <option value="12">Stagnant Water</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Location</label>
+                        <div class="input-group">
+                            <button type="button" class="btn btn-outline-primary" onclick="getLocation()">
+                                📍 Auto-Detect GPS
+                            </button>
+                            <input type="text" name="address" id="address" class="form-control" placeholder="Or type address manually" required>
+                        </div>
+                        <small class="text-muted" id="geo-status"></small>
+                        <input type="hidden" name="latitude" id="latitude">
+                        <input type="hidden" name="longitude" id="longitude">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Photo Evidence</label>
+                        <input type="file" name="file" class="form-control" accept="image/*" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-danger w-100">Submit Report</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Simple script to get browser location
+    function getLocation() {
+        const status = document.getElementById("geo-status");
+        if (navigator.geolocation) {
+            status.innerHTML = "Locating...";
+            navigator.geolocation.getCurrentPosition(showPosition, showError);
+        } else {
+            status.innerHTML = "Geolocation is not supported by this browser.";
+        }
+    }
+
+    function showPosition(position) {
+        document.getElementById("latitude").value = position.coords.latitude;
+        document.getElementById("longitude").value = position.coords.longitude;
+        document.getElementById("address").value = "GPS Coordinates Captured"; // Placeholder
+        document.getElementById("geo-status").innerHTML = "✅ Location Locked!";
+        document.getElementById("geo-status").classList.add("text-success");
+    }
+
+    function showError(error) {
+        document.getElementById("geo-status").innerHTML = "❌ Error getting location.";
+    }
+</script>
+{% endblock %}

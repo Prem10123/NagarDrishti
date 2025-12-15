@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center">
+        {# 1. Dynamic Alert for Status Messages #}
+        {# This checks for any message passed from the backend that isn't the default one #}
+        {% if message and message != "Welcome to Nagardrishti" %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong>Status:</strong> {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endif %}
+
+        {# 2. Main Content Card #}
+        <div class="card shadow-sm border-0 p-5">
+            <h1 class="display-4 text-primary">Nagardrishti</h1>
+            <p class="lead">Connect directly with the Swachhata Mission.</p>
+            <hr class="my-4">
+            <p>Report civic issues like garbage, potholes, and streetlights instantly.</p>
+            
+            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                <a href="/report" class="btn btn-primary btn-lg px-4 gap-3">Report an Issue</a>
+                <a href="#" class="btn btn-outline-secondary btn-lg px-4">View Status</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

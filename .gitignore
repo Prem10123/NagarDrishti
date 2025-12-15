@@ -1,0 +1,12 @@
+# Ignore Database
+nagardrishti.db
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+
+# Ignore user uploads
+static/uploads/
+
+# Ignore Environment secrets (if we had them)
+.env

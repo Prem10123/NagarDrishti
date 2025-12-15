@@ -1,0 +1,164 @@
+📂 NAGARDRISHTI PROJECT BLUEPRINT - SESSION 2
+Status: Folder Structure & Dependencies Locked Architecture: Hybrid (Local Database + Swachhata API)
+
+1. Project Folder Structure Please ensure your local folder looks exactly like this:
+
+Plaintext
+
+Nagardrishti/
+│
+├── .env                    # (Create empty file)
+├── requirements.txt        # (Content provided below)
+│
+├── app/                    # (Folder)
+│   ├── __init__.py         # (Create empty file)
+│   ├── main.py             # (Create empty file)
+│   ├── database.py         # (Create empty file)
+│   ├── models.py           # (Create empty file)
+│   └── swachhata_client.py # (Create empty file)
+│
+├── static/                 # (Folder)
+│   ├── style.css           # (Create empty file)
+│   └── script.js           # (Create empty file)
+│
+└── templates/              # (Folder)
+    ├── base.html           # (Create empty file)
+    ├── index.html          # (Create empty file)
+    └── report.html         # (Create empty file)
+2. File Content: requirements.txt Copy this content into your Nagardrishti/requirements.txt file:
+
+Plaintext
+
+fastapi
+uvicorn
+jinja2
+python-multipart
+sqlalchemy
+requests
+python-dotenv
+Instructions for you:
+
+Create the folders and files as shown above.
+
+Paste the text into requirements.txt.
+
+Open your terminal in the Nagardrishti folder and run: pip install -r requirements.txt to install the libraries.
+NAGARDRISHTI PROJECT BLUEPRINT - SESSION 3
+Status: Local Database, Registration, & Reporting Fully Functional Next Step: Integration with Swachhata API
+
+1. Updated File: app/models.py (Defines the User and Complaint tables matching the PDF specs)
+
+Python
+
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime
+from sqlalchemy.orm import relationship
+from datetime import datetime
+from .database import Base
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    mobile_number = Column(String, unique=True, index=True) 
+    full_name = Column(String)
+    swachhata_user_id = Column(Integer, nullable=True)
+    complaints = relationship("Complaint", back_populates="owner")
+
+class Complaint(Base):
+    __tablename__ = "complaints"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    category_id = Column(Integer, nullable=False)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    address = Column(String, nullable=False)
+    landmark = Column(String, nullable=True)
+    image_url = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    swachhata_complaint_id = Column(String, nullable=True)
+    status = Column(String, default="Pending Sync") 
+    created_at = Column(DateTime, default=datetime.utcnow)
+    owner = relationship("User", back_populates="complaints")
+2. Updated File: app/main.py (Includes file upload handling and logic for both Registration and Reporting)
+
+Python
+
+from fastapi import FastAPI, Request, Depends, Form, UploadFile, File
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
+from sqlalchemy.orm import Session
+import shutil
+import os
+from . import models, database
+
+models.Base.metadata.create_all(bind=database.engine)
+
+app = FastAPI(title="Nagardrishti")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
+# Ensure uploads folder exists
+os.makedirs("static/uploads", exist_ok=True)
+
+def get_db():
+    db = database.SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@app.get("/")
+def home(request: Request, db: Session = Depends(get_db)):
+    message = request.query_params.get("msg", "Welcome to Nagardrishti")
+    return templates.TemplateResponse("index.html", {"request": request, "message": message})
+
+@app.get("/register")
+def show_register_page(request: Request):
+    return templates.TemplateResponse("register.html", {"request": request})
+
+@app.post("/register")
+def register_user(request: Request, full_name: str = Form(...), mobile_number: str = Form(...), db: Session = Depends(get_db)):
+    existing_user = db.query(models.User).filter(models.User.mobile_number == mobile_number).first()
+    if existing_user:
+        return RedirectResponse(url="/?msg=Welcome+back%2C+"+existing_user.full_name, status_code=303)
+    new_user = models.User(full_name=full_name, mobile_number=mobile_number)
+    db.add(new_user)
+    db.commit()
+    return RedirectResponse(url="/?msg=Registration+Successful!", status_code=303)
+
+@app.get("/report")
+def show_report_page(request: Request):
+    return templates.TemplateResponse("report.html", {"request": request})
+
+@app.post("/report")
+def submit_report(
+    request: Request,
+    mobile_number: str = Form(...),
+    category_id: int = Form(...),
+    address: str = Form(...),
+    description: str = Form(""),
+    latitude: float = Form(0.0),
+    longitude: float = Form(0.0),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    user = db.query(models.User).filter(models.User.mobile_number == mobile_number).first()
+    if not user:
+        return RedirectResponse(url="/register?msg=Error:+Mobile+number+not+found", status_code=303)
+
+    file_location = f"static/uploads/{file.filename}"
+    with open(file_location, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    new_complaint = models.Complaint(
+        user_id=user.id,
+        category_id=category_id,
+        latitude=latitude,
+        longitude=longitude,
+        address=address,
+        image_url=file_location,
+        description=description
+    )
+    db.add(new_complaint)
+    db.commit()
+    return RedirectResponse(url="/?msg=Report+Submitted+Successfully!", status_code=303)
