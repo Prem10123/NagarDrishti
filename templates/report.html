@@ -1,85 +1,213 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Report an Issue - Nagardrishti</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .ai-thinking { color: #007bff; font-style: italic; }
+        .ai-success { color: #198754; font-weight: bold; }
+        .ai-warning { color: #fd7e14; font-weight: bold; }
+        .ai-error { color: #dc3545; font-weight: bold; }
+    </style>
+</head>
+<body class="bg-light">
 
-{% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card shadow">
-            <div class="card-header bg-danger text-white">
-                <h4 class="mb-0">Report an Issue</h4>
-            </div>
-            <div class="card-body">
-                <form action="/report" method="post" enctype="multipart/form-data">
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">🚩 Report an Urban Issue</h4>
+                </div>
+                <div class="card-body">
                     
-                    <div class="mb-3">
-                        <label class="form-label">Your Mobile Number</label>
-                        <input type="tel" name="mobile_number" class="form-control" required placeholder="Must be registered first">
-                    </div>
+                    <div id="alertBox" class="alert d-none" role="alert"></div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Category</label>
-                        <select name="category_id" class="form-select" required>
-                            <option value="1">Dead Animal</option>
-                            <option value="2">Dustbins not cleaned</option>
-                            <option value="3">Garbage dump</option>
-                            <option value="6">No electricity in public toilet</option>
-                            <option value="10">Open Manholes</option>
-                            <option value="11">Sewerage Overflow</option>
-                            <option value="12">Stagnant Water</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Location</label>
-                        <div class="input-group">
-                            <button type="button" class="btn btn-outline-primary" onclick="getLocation()">
-                                📍 Auto-Detect GPS
-                            </button>
-                            <input type="text" name="address" id="address" class="form-control" placeholder="Or type address manually" required>
+                    <form action="/report" method="post" enctype="multipart/form-data">
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Mobile Number</label>
+                            <input type="text" name="mobile_number" class="form-control" required placeholder="Enter registered mobile number">
                         </div>
-                        <small class="text-muted" id="geo-status"></small>
-                        <input type="hidden" name="latitude" id="latitude">
-                        <input type="hidden" name="longitude" id="longitude">
-                    </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Photo Evidence</label>
-                        <input type="file" name="file" class="form-control" accept="image/*" required>
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Photo Evidence</label>
+                            <input type="file" name="file" id="imageUpload" class="form-control" accept="image/*" required onchange="autoDetectCategory()">
+                            <small id="aiStatus" class="form-text text-muted">Upload a photo to auto-detect the category.</small>
+                        </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea name="description" class="form-control" rows="3"></textarea>
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Category</label>
+                            <select name="category_id" id="categoryId" class="form-select" required onchange="checkOverride()">
+                                <option value="" disabled selected>Select Category...</option>
+                                <option value="1">1. Dead animal(s)</option>
+                                <option value="2">2. Dustbins not cleaned</option>
+                                <option value="3">3. Garbage dump</option>
+                                <option value="4">4. Garbage vehicle not arrived</option>
+                                <option value="5">5. Sweeping not done</option>
+                                <option value="6">6. No electricity in public toilet</option>
+                                <option value="7">7. No water supply in public toilet</option>
+                                <option value="8">8. Public toilet blockage</option>
+                                <option value="9">9. Public toilet cleaning</option>
+                                <option value="10">10. Open Manholes / Potholes</option>
+                                <option value="11">11. Overflow of Sewerage</option>
+                                <option value="12">12. Stagnant Water</option>
+                                <option value="13">13. Improper Disposal of Fecal Waste</option>
+                                <option value="14">14. Debris Removal</option>
+                                <option value="15">15. Burning Of Garbage</option>
+                                <option value="16">16. Open Defecation</option>
+                                <option value="17">17. Overflow of Septic Tanks</option>
+                                <option value="18">18. Yellow Spot (Urination)</option>
+                            </select>
+                        </div>
 
-                    <button type="submit" class="btn btn-danger w-100">Submit Report</button>
-                </form>
+                        <div id="forceOption" class="mb-3 p-3 border border-warning bg-warning-subtle rounded d-none">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="force_submit" value="True" id="forceCheck">
+                                <label class="form-check-label fw-bold text-dark" for="forceCheck">
+                                    ⚠️ AI Disagrees: I confirm my selection is correct.
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Location</label>
+                            <div class="input-group">
+                                <button type="button" class="btn btn-outline-primary" onclick="getLocation()">
+                                    📍 Auto-Detect GPS
+                                </button>
+                                <input type="text" name="address" id="address" class="form-control" placeholder="Or type address manually" required>
+                            </div>
+                            <small id="geo-status" class="text-success fw-bold"></small>
+                            <input type="hidden" name="latitude" id="latitude" value="0.0">
+                            <input type="hidden" name="longitude" id="longitude" value="0.0">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Description</label>
+                            <textarea name="description" class="form-control" rows="3" placeholder="Describe the issue..."></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-danger w-100 py-2">Submit Report</button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="text-center mt-3">
+                <a href="/" class="text-decoration-none text-secondary">← Back to Home</a>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // Simple script to get browser location
+    let aiSuggestedId = null;
+
+    // --- ALERT BOX LOGIC ---
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const msg = urlParams.get('msg');
+        const alertBox = document.getElementById('alertBox');
+
+        if (msg) {
+            alertBox.classList.remove('d-none');
+            alertBox.innerText = msg;
+            if (msg.includes("Error") || msg.includes("Failed")) {
+                alertBox.classList.add('alert-danger');
+            } else {
+                alertBox.classList.add('alert-success');
+            }
+        }
+    };
+
+    // --- AI AUTO-DETECTION ---
+    async function autoDetectCategory() {
+        const fileInput = document.getElementById('imageUpload');
+        const statusText = document.getElementById('aiStatus');
+        const categorySelect = document.getElementById('categoryId');
+
+        if (fileInput.files.length === 0) return;
+
+        statusText.className = "ai-thinking";
+        statusText.innerText = "🔄 AI is analyzing image...";
+        
+        let formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        try {
+            let response = await fetch("/detect-category", {
+                method: "POST",
+                body: formData
+            });
+
+            if (response.ok) {
+                let result = await response.json();
+
+                if (result.suggested_id) {
+                    // AI found a match!
+                    categorySelect.value = result.suggested_id;
+                    aiSuggestedId = result.suggested_id.toString(); 
+                    
+                    statusText.className = "ai-success";
+                    statusText.innerText = "✅ AI Detected: " + result.category_name;
+                    
+                    // Hide override box since we just updated the selection
+                    document.getElementById('forceOption').classList.add('d-none');
+                    document.getElementById('forceCheck').checked = false;
+                } else {
+                    // AI is unsure (Unknown)
+                    statusText.className = "ai-warning";
+                    statusText.innerText = "⚠️ AI could not confidently detect the object. Please select manually.";
+                    aiSuggestedId = null;
+                }
+            }
+        } catch (error) {
+            console.error("AI Error:", error);
+            statusText.innerText = "⚠️ AI Service Unavailable.";
+        }
+    }
+
+    // --- CHECK FOR MANUAL OVERRIDE ---
+    function checkOverride() {
+        const currentSelection = document.getElementById('categoryId').value;
+        const forceBox = document.getElementById('forceOption');
+
+        // Only show the checkbox if:
+        // 1. AI actually made a suggestion (aiSuggestedId is not null)
+        // 2. The user selected something DIFFERENT than the suggestion
+        if (aiSuggestedId && currentSelection !== aiSuggestedId) {
+            forceBox.classList.remove('d-none');
+            // Optional: Auto-check it for better UX, or force them to click it
+            document.getElementById('forceCheck').checked = true; 
+        } else {
+            forceBox.classList.add('d-none');
+            document.getElementById('forceCheck').checked = false;
+        }
+    }
+
+    // --- GPS LOGIC ---
     function getLocation() {
         const status = document.getElementById("geo-status");
         if (navigator.geolocation) {
-            status.innerHTML = "Locating...";
+            status.innerText = "📡 Locating...";
             navigator.geolocation.getCurrentPosition(showPosition, showError);
         } else {
-            status.innerHTML = "Geolocation is not supported by this browser.";
+            status.innerText = "Geolocation not supported.";
         }
     }
 
     function showPosition(position) {
         document.getElementById("latitude").value = position.coords.latitude;
         document.getElementById("longitude").value = position.coords.longitude;
-        document.getElementById("address").value = "GPS Coordinates Captured"; // Placeholder
-        document.getElementById("geo-status").innerHTML = "✅ Location Locked!";
-        document.getElementById("geo-status").classList.add("text-success");
+        document.getElementById("address").value = "GPS Coordinates Locked"; 
+        document.getElementById("geo-status").innerText = "✅ Location Locked!";
     }
 
     function showError(error) {
-        document.getElementById("geo-status").innerHTML = "❌ Error getting location.";
+        document.getElementById("geo-status").innerText = "❌ GPS Error.";
+        document.getElementById("geo-status").classList.add("text-danger");
     }
 </script>
-{% endblock %}
+
+</body>
+</html>
