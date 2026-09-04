@@ -4,8 +4,8 @@
   "description": "Report civic issues and track them from any device.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f4efe6",
-  "theme_color": "#0d4f4a",
+  "background_color": "#070b12",
+  "theme_color": "#070b12",
   "icons": [
     {
       "src": "/static/favicon.svg",
