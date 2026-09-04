@@ -12,13 +12,26 @@
 <form action="/report" method="post" enctype="multipart/form-data" class="report-form glass-card reveal" id="reportForm" style="--d: 80ms">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <div class="dropzone" id="dropzone">
-        <input type="file" name="file" id="imageUpload" accept="image/*" capture="environment" required>
+        <input type="file" id="imageUpload" accept="image/jpeg,image/png,image/webp" class="is-hidden" tabindex="-1">
         <div class="dropzone-ui" id="dropzoneUi">
             <span class="dropzone-mark">↑</span>
             <strong>Add photo evidence</strong>
-            <span>Tap to open camera or gallery</span>
+            <span>Use Take photo. It captures a small image so the phone does not run out of memory.</span>
+            <div class="photo-actions">
+                <button type="button" class="btn btn-primary" id="cameraBtn">Take photo</button>
+                <button type="button" class="btn btn-secondary" id="galleryBtn">Gallery</button>
+            </div>
+        </div>
+        <video id="liveCamera" class="photo-preview is-hidden" playsinline autoplay muted></video>
+        <div id="cameraBar" class="photo-actions camera-bar is-hidden">
+            <button type="button" class="btn btn-accent" id="snapBtn">Capture</button>
+            <button type="button" class="btn btn-ghost" id="cancelCamBtn">Cancel</button>
         </div>
         <img id="photoPreview" class="photo-preview is-hidden" alt="Selected evidence">
+        <div id="photoEditBar" class="photo-actions camera-bar is-hidden">
+            <button type="button" class="btn btn-primary" id="retakeBtn">Retake</button>
+            <button type="button" class="btn btn-ghost" id="clearPhotoBtn">Clear</button>
+        </div>
     </div>
     <p id="aiStatus" class="hint">AI will suggest a category after you pick a photo.</p>
 

@@ -50,45 +50,45 @@
     var dropzone = document.getElementById("dropzone");
     var preview = document.getElementById("photoPreview");
     var dropUi = document.getElementById("dropzoneUi");
-    if (!fileInput || !categorySelect) return;
+    var cameraBtn = document.getElementById("cameraBtn");
+    var galleryBtn = document.getElementById("galleryBtn");
+    var liveCamera = document.getElementById("liveCamera");
+    var cameraBar = document.getElementById("cameraBar");
+    var snapBtn = document.getElementById("snapBtn");
+    var cancelCamBtn = document.getElementById("cancelCamBtn");
+    var photoEditBar = document.getElementById("photoEditBar");
+    var retakeBtn = document.getElementById("retakeBtn");
+    var clearPhotoBtn = document.getElementById("clearPhotoBtn");
+    if (!categorySelect) return;
 
     var aiSuggestedId = null;
-
+    var evidenceBlob = null;
+    var previewUrl = "";
+    var cameraStream = null;
     var reportForm = document.getElementById("reportForm");
-    var compressedFile = null;
     var photoPipeline = Promise.resolve();
 
-    fileInput.addEventListener("change", function () {
-        compressedFile = null;
-        showPreview();
-        photoPipeline = preparePhoto().then(function () {
-            return autoDetectCategory();
-        });
+    if (cameraBtn) cameraBtn.addEventListener("click", startCamera);
+    if (galleryBtn) galleryBtn.addEventListener("click", function () { fileInput.click(); });
+    if (snapBtn) snapBtn.addEventListener("click", snapCamera);
+    if (cancelCamBtn) cancelCamBtn.addEventListener("click", stopCamera);
+    if (retakeBtn) retakeBtn.addEventListener("click", function () {
+        clearPhoto(false);
+        startCamera();
     });
+    if (clearPhotoBtn) clearPhotoBtn.addEventListener("click", function () {
+        clearPhoto(true);
+    });
+    if (fileInput) {
+        fileInput.addEventListener("change", function () {
+            var file = fileInput.files && fileInput.files[0];
+            fileInput.value = "";
+            if (!file) return;
+            photoPipeline = useSmallPhoto(file);
+        });
+    }
     categorySelect.addEventListener("change", checkOverride);
     if (gpsBtn) gpsBtn.addEventListener("click", getLocation);
-
-    ["dragenter", "dragover"].forEach(function (evt) {
-        dropzone.addEventListener(evt, function (e) {
-            e.preventDefault();
-            dropzone.classList.add("is-hover");
-        });
-    });
-    ["dragleave", "drop"].forEach(function (evt) {
-        dropzone.addEventListener(evt, function (e) {
-            e.preventDefault();
-            dropzone.classList.remove("is-hover");
-        });
-    });
-    dropzone.addEventListener("drop", function (e) {
-        if (!e.dataTransfer.files.length) return;
-        fileInput.files = e.dataTransfer.files;
-        compressedFile = null;
-        showPreview();
-        photoPipeline = preparePhoto().then(function () {
-            return autoDetectCategory();
-        });
-    });
 
     if (reportForm) {
         reportForm.addEventListener("submit", function (e) {
@@ -97,22 +97,154 @@
         });
     }
 
-    function showPreview() {
-        if (!fileInput.files.length || !preview) return;
-        var url = URL.createObjectURL(fileInput.files[0]);
-        preview.src = url;
-        preview.classList.remove("is-hidden");
+    function setStatus(kind, text) {
+        if (!statusText) return;
+        statusText.className = "hint " + (kind || "");
+        statusText.innerText = text;
+    }
+
+    function showSmallPreview(blob) {
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        previewUrl = URL.createObjectURL(blob);
         if (dropUi) dropUi.classList.add("is-hidden");
+        if (liveCamera) liveCamera.classList.add("is-hidden");
+        if (cameraBar) cameraBar.classList.add("is-hidden");
+        if (preview) {
+            preview.src = previewUrl;
+            preview.classList.remove("is-hidden");
+        }
+        if (photoEditBar) photoEditBar.classList.remove("is-hidden");
         dropzone.classList.add("has-photo");
     }
 
+    function clearPhoto(resetStatus) {
+        evidenceBlob = null;
+        aiSuggestedId = null;
+        hideForce();
+        if (previewUrl) {
+            URL.revokeObjectURL(previewUrl);
+            previewUrl = "";
+        }
+        if (preview) {
+            preview.removeAttribute("src");
+            preview.classList.add("is-hidden");
+        }
+        if (photoEditBar) photoEditBar.classList.add("is-hidden");
+        dropzone.classList.remove("has-photo");
+        if (dropUi) dropUi.classList.remove("is-hidden");
+        if (resetStatus) {
+            setStatus("", "AI will suggest a category after you pick a photo.");
+        }
+    }
+
+    function stopCamera() {
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(function (t) { t.stop(); });
+            cameraStream = null;
+        }
+        if (liveCamera) {
+            liveCamera.srcObject = null;
+            liveCamera.classList.add("is-hidden");
+        }
+        if (cameraBar) cameraBar.classList.add("is-hidden");
+        if (dropUi && !evidenceBlob) dropUi.classList.remove("is-hidden");
+    }
+
+    async function startCamera() {
+        stopCamera();
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            setStatus("ai-error", "This browser cannot open the in-app camera. Try Gallery with a small image.");
+            return;
+        }
+        try {
+            cameraStream = await navigator.mediaDevices.getUserMedia({
+                audio: false,
+                video: {
+                    facingMode: { ideal: "environment" },
+                    width: { ideal: 1280, max: 1280 },
+                    height: { ideal: 720, max: 720 }
+                }
+            });
+            liveCamera.srcObject = cameraStream;
+            liveCamera.classList.remove("is-hidden");
+            cameraBar.classList.remove("is-hidden");
+            dropUi.classList.add("is-hidden");
+            if (preview) preview.classList.add("is-hidden");
+            if (photoEditBar) photoEditBar.classList.add("is-hidden");
+        } catch (err) {
+            setStatus("ai-error", "Camera permission denied. Allow camera, or pick a small photo from Gallery.");
+        }
+    }
+
+    function canvasToJpeg(canvas) {
+        return new Promise(function (resolve, reject) {
+            canvas.toBlob(function (blob) {
+                if (blob) resolve(blob);
+                else reject(new Error("jpeg"));
+            }, "image/jpeg", 0.72);
+        });
+    }
+
+    async function snapCamera() {
+        if (!liveCamera || !liveCamera.videoWidth) {
+            setStatus("ai-error", "Camera is still starting. Wait a second and tap Capture.");
+            return;
+        }
+        var max = 960;
+        var scale = Math.min(1, max / Math.max(liveCamera.videoWidth, liveCamera.videoHeight));
+        var canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(liveCamera.videoWidth * scale));
+        canvas.height = Math.max(1, Math.round(liveCamera.videoHeight * scale));
+        var ctx = canvas.getContext("2d", { alpha: false });
+        ctx.drawImage(liveCamera, 0, 0, canvas.width, canvas.height);
+        try {
+            var blob = await canvasToJpeg(canvas);
+            stopCamera();
+            await useEvidence(blob);
+        } catch (err) {
+            setStatus("ai-error", "Could not capture. Try again.");
+        }
+    }
+
+    async function shrinkFile(file) {
+        if (!file) throw new Error("no file");
+        if (file.size < 220 * 1024 && file.type === "image/jpeg") return file;
+        if (!window.createImageBitmap) throw new Error("no bitmap");
+        var bmp = await createImageBitmap(file, {
+            resizeWidth: 960,
+            resizeQuality: "low"
+        });
+        var canvas = document.createElement("canvas");
+        canvas.width = bmp.width;
+        canvas.height = bmp.height;
+        var ctx = canvas.getContext("2d", { alpha: false });
+        ctx.drawImage(bmp, 0, 0);
+        bmp.close();
+        return canvasToJpeg(canvas);
+    }
+
+    async function useSmallPhoto(file) {
+        setStatus("ai-thinking", "Shrinking photo…");
+        try {
+            var small = await shrinkFile(file);
+            await useEvidence(small);
+        } catch (err) {
+            setStatus("ai-error", "That gallery photo is too large for this phone. Use Take photo instead.");
+        }
+    }
+
+    async function useEvidence(blob) {
+        evidenceBlob = blob;
+        showSmallPreview(blob);
+        await autoDetectCategory();
+    }
+
     async function autoDetectCategory() {
-        if (!fileInput.files.length) return;
-        statusText.className = "hint ai-thinking";
-        statusText.innerText = "AI is reading the photo…";
+        if (!evidenceBlob) return;
+        setStatus("ai-thinking", "AI is reading the photo…");
 
         var formData = new FormData();
-        formData.append("file", compressedFile || fileInput.files[0]);
+        formData.append("file", evidenceBlob, "evidence.jpg");
 
         try {
             var csrf = document.querySelector('meta[name="csrf-token"]');
@@ -210,43 +342,6 @@
         status.innerText = "Could not read GPS. Type the address instead.";
     }
 
-    function preparePhoto() {
-        if (!fileInput.files.length) return Promise.resolve();
-        return compressPhoto(fileInput.files[0]).then(function (file) {
-            compressedFile = file;
-        });
-    }
-
-    function compressPhoto(file) {
-        if (!file || file.size < 350 * 1024) return Promise.resolve(file);
-        return new Promise(function (resolve) {
-            var url = URL.createObjectURL(file);
-            var img = new Image();
-            img.onload = function () {
-                var max = 1280;
-                var scale = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
-                var canvas = document.createElement("canvas");
-                canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
-                canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
-                var ctx = canvas.getContext("2d");
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                canvas.toBlob(function (blob) {
-                    URL.revokeObjectURL(url);
-                    if (!blob) {
-                        resolve(file);
-                        return;
-                    }
-                    resolve(new File([blob], "evidence.jpg", { type: "image/jpeg" }));
-                }, "image/jpeg", 0.78);
-            };
-            img.onerror = function () {
-                URL.revokeObjectURL(url);
-                resolve(file);
-            };
-            img.src = url;
-        });
-    }
-
     async function submitReport(form) {
         var btn = document.getElementById("submitReport");
         if (btn && btn.dataset.busy) return;
@@ -256,10 +351,10 @@
             btn.textContent = "Submitting…";
         }
         try {
-            if (!compressedFile && fileInput.files.length) {
-                compressedFile = await compressPhoto(fileInput.files[0]);
-            }
             await photoPipeline;
+            if (!evidenceBlob) {
+                throw new Error("photo");
+            }
             var body = new FormData(form);
             body.delete("file");
             var csrf = document.querySelector('meta[name="csrf-token"]');
