@@ -2,27 +2,24 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8 text-center">
-        {# 1. Dynamic Alert for Status Messages #}
-        {# This checks for any message passed from the backend that isn't the default one #}
-        {% if message and message != "Welcome to Nagardrishti" %}
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <strong>Status:</strong> {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        {% endif %}
-
-        {# 2. Main Content Card #}
-        <div class="card shadow-sm border-0 p-5">
-            <h1 class="display-4 text-primary">Nagardrishti</h1>
-            <p class="lead">Connect directly with the Swachhata Mission.</p>
+    <div class="col-lg-8 text-center">
+        <div class="card shadow-sm border-0 p-4 p-md-5">
+            <h1 class="display-5 text-primary fw-bold">Nagardrishti</h1>
+            <p class="lead mb-2">Report civic issues and track them from any device.</p>
+            <p class="text-muted">Garbage, potholes, drains, public toilets — photo, location, and a ticket in one place.</p>
             <hr class="my-4">
-            <p>Report civic issues like garbage, potholes, and streetlights instantly.</p>
-            
+            {% if user %}
+            <p class="mb-4">Signed in as <strong>{{ user.full_name }}</strong></p>
             <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
-                <a href="/report" class="btn btn-primary btn-lg px-4 gap-3">Report an Issue</a>
-                <a href="#" class="btn btn-outline-secondary btn-lg px-4">View Status</a>
+                <a href="/report" class="btn btn-primary btn-lg px-4">Report an Issue</a>
+                <a href="/my-reports" class="btn btn-outline-secondary btn-lg px-4">View Status</a>
             </div>
+            {% else %}
+            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                <a href="/register" class="btn btn-primary btn-lg px-4">Create account</a>
+                <a href="/login" class="btn btn-outline-secondary btn-lg px-4">Login</a>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

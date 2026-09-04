@@ -1,96 +1,96 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Admin Dashboard</h2>
-        <span class="badge bg-primary fs-6">Nagardrishti HQ</span>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h4 mb-0">Admin dashboard</h2>
+    <div>
+        <span class="badge bg-primary me-2">Nagardrishti HQ</span>
+        <a class="btn btn-outline-secondary btn-sm" href="/admin/logout">Admin logout</a>
     </div>
+</div>
 
-    <ul class="nav nav-tabs" id="myTab" role="tablist">
-        <li class="nav-item">
-            <button class="nav-link active" id="complaints-tab" data-bs-toggle="tab" data-bs-target="#complaints" type="button">Civic Reports</button>
-        </li>
-        <li class="nav-item">
-            <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button">Registered Citizens</button>
-        </li>
-    </ul>
+<ul class="nav nav-tabs" id="myTab" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active" id="complaints-tab" data-bs-toggle="tab" data-bs-target="#complaints" type="button">Civic reports</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button">Registered citizens</button>
+    </li>
+</ul>
 
-    <div class="tab-content mt-3" id="myTabContent">
-        
-        <div class="tab-pane fade show active" id="complaints">
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Citizen Details</th> <th>Issue & Description</th>
-                                    <th>Location</th>
-                                    <th>Evidence</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for c in complaints %}
-                                <tr>
-                                    <td><strong>#{{ c.id }}</strong></td>
-                                    
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="ms-2">
-                                                <h6 class="mb-0">{{ c.owner.full_name }}</h6>
-                                                <small class="text-muted">📞 {{ c.owner.mobile_number }}</small>
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    <td>
-                                        <span class="badge bg-secondary mb-1">Cat ID: {{ c.category_id }}</span>
-                                        <p class="mb-0 small text-dark">{{ c.description or "No description provided." }}</p>
-                                    </td>
-
-                                    <td>
-                                        <small class="d-block text-truncate" style="max-width: 150px;">{{ c.address }}</small>
-                                        <span class="text-muted" style="font-size: 0.75em">GPS: {{ c.latitude }}, {{ c.longitude }}</span>
-                                    </td>
-
-                                    <td>
-                                        <a href="/{{ c.image_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                                            View Photo
-                                        </a>
-                                    </td>
-
-                                    <td>
-                                        {% if c.status == 'Pending Sync' %}
-                                            <span class="badge bg-warning text-dark">Pending</span>
-                                        {% elif c.status == 'Synced' %}
-                                            <span class="badge bg-success">Synced</span>
-                                            <div style="font-size: 0.7em; color: green;">Ticket: {{ c.swachhata_complaint_id }}</div>
-                                        {% else %}
-                                            <span class="badge bg-secondary">{{ c.status }}</span>
+<div class="tab-content mt-3">
+    <div class="tab-pane fade show active" id="complaints">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Citizen</th>
+                                <th>Issue</th>
+                                <th>Location</th>
+                                <th>Evidence</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in complaints %}
+                            <tr>
+                                <td><strong>#{{ c.id }}</strong></td>
+                                <td>
+                                    {% if c.owner %}
+                                    <div>{{ c.owner.full_name }}</div>
+                                    <small class="text-muted">{{ c.owner.mobile_number }}</small>
+                                    {% else %}
+                                    <span class="text-muted">Unknown</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary mb-1">{{ c.category_name }}</span>
+                                    <p class="mb-0 small">{{ c.description or "No description provided." }}</p>
+                                </td>
+                                <td>
+                                    <small class="d-block text-truncate" style="max-width: 180px;">{{ c.address }}</small>
+                                    <span class="text-muted" style="font-size: 0.75em">GPS: {{ c.latitude }}, {{ c.longitude }}</span>
+                                </td>
+                                <td>
+                                    <a href="{{ c.photo_href }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">View photo</a>
+                                </td>
+                                <td>
+                                    {% if c.status == 'Pending Sync' %}
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                    {% elif c.status == 'Synced' %}
+                                        <span class="badge bg-success">Synced</span>
+                                        {% if c.swachhata_complaint_id %}
+                                        <div class="small text-success">Ticket: {{ c.swachhata_complaint_id }}</div>
                                         {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ c.status }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="6" class="text-center text-muted py-4">No reports yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="tab-pane fade" id="users">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <table class="table table-bordered">
+    <div class="tab-pane fade" id="users">
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-bordered mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Internal ID</th>
-                                <th>Full Name</th>
-                                <th>Mobile Number</th>
-                                <th>Govt User ID</th>
+                                <th>ID</th>
+                                <th>Full name</th>
+                                <th>Mobile</th>
+                                <th>Govt user ID</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -103,10 +103,12 @@
                                     {% if u.swachhata_user_id %}
                                         <span class="text-success fw-bold">{{ u.swachhata_user_id }}</span>
                                     {% else %}
-                                        <span class="text-muted">Not Synced</span>
+                                        <span class="text-muted">Not synced</span>
                                     {% endif %}
                                 </td>
                             </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="text-center text-muted py-4">No citizens yet.</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>

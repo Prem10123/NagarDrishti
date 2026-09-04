@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 mb-0">My reports</h2>
+    <a href="/report" class="btn btn-primary btn-sm">New report</a>
+</div>
+<p class="text-muted small">
+    {% if cloud_enabled %}
+    These tickets live in the cloud. Log in on another phone or computer to see the same list.
+    {% else %}
+    These tickets are stored on this computer until you connect Supabase.
+    {% endif %}
+</p>
+
+{% if not complaints %}
+<div class="card shadow-sm border-0">
+    <div class="card-body text-center py-5">
+        <p class="mb-3">You have not filed any reports yet.</p>
+        <a href="/report" class="btn btn-outline-primary">File your first report</a>
+    </div>
+</div>
+{% else %}
+<div class="row g-3">
+    {% for c in complaints %}
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <span class="badge bg-secondary">#{{ c.id }} · {{ c.category_name }}</span>
+                    {% if c.status == 'Synced' %}
+                    <span class="badge bg-success">Synced</span>
+                    {% elif c.status == 'Pending Sync' %}
+                    <span class="badge bg-warning text-dark">Pending</span>
+                    {% else %}
+                    <span class="badge bg-secondary">{{ c.status }}</span>
+                    {% endif %}
+                </div>
+                <p class="mt-3 mb-1">{{ c.description or "No description provided." }}</p>
+                <p class="small text-muted mb-2">{{ c.address }}</p>
+                {% if c.created_label %}
+                <p class="small text-muted mb-2">{{ c.created_label }}</p>
+                {% endif %}
+                {% if c.swachhata_complaint_id %}
+                <p class="small mb-2">Ticket: <strong>{{ c.swachhata_complaint_id }}</strong></p>
+                {% endif %}
+                <a href="{{ c.photo_href }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">View photo</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

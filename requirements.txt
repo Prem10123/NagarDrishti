@@ -4,7 +4,10 @@ jinja2
 python-multipart
 sqlalchemy
 requests
+httpx
 python-dotenv
+itsdangerous
+supabase
 tensorflow-cpu
 pillow
 numpy

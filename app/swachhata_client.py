@@ -1,21 +1,30 @@
+import os
 import random
 import string
 
+from . import config
+
+
 class SwachhataClient:
     def __init__(self):
-        self.api_url = "https://api.swachh.city/sbm/v1"
-        # In a real app, you would load these from .env
-        self.vendor_name = "India" 
-        self.access_key = "8a34n9up"
+        self.api_url = config.SWACHHATA_API_URL
+        self.vendor_name = config.SWACHHATA_VENDOR
+        self.access_key = config.SWACHHATA_ACCESS_KEY
+        self.live = bool(self.vendor_name and self.access_key)
 
     def register_user(self, name, mobile):
-        # SIMULATION: Returns a fake user ID like the real API would
-        print(f"[API] Registering User: {name} ({mobile})")
+        if not self.live:
+            print(f"[Swachhata simulated] Registering {name} ({mobile})")
+            return random.randint(100000, 999999)
+        # Real HTTP wiring can be added when official credentials are issued.
+        print(f"[Swachhata] Would register {name} at {self.api_url}")
         return random.randint(100000, 999999)
 
     def post_complaint(self, mobile, category_id, lat, lon, address, image_path):
-        # SIMULATION: Returns a fake complaint ID
-        print(f"[API] Posting Complaint: Cat {category_id} at {address}")
-        # In real integration, we would upload the 'image_path' here
-        fake_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+        if not self.live:
+            print(f"[Swachhata simulated] Complaint cat={category_id} at {address}")
+            fake_id = "".join(random.choices(string.ascii_uppercase + string.digits, k=10))
+            return f"C{fake_id}"
+        print(f"[Swachhata] Would post complaint for {mobile} using {image_path}")
+        fake_id = "".join(random.choices(string.ascii_uppercase + string.digits, k=10))
         return f"C{fake_id}"
