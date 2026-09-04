@@ -9,7 +9,7 @@
     if (toast) {
         setTimeout(function () {
             toast.style.opacity = "0";
-            toast.style.transform = "translate(-50%, -8px)";
+            toast.style.transform = "translateY(-8px)";
             toast.style.transition = "opacity 280ms ease, transform 280ms ease";
             setTimeout(function () { toast.remove(); }, 300);
         }, 4200);

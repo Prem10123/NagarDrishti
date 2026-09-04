@@ -64,13 +64,14 @@
     <div class="sys-banner">Local mode — cloud sync is not configured.</div>
     {% endif %}
 
+    {% if message %}
+    <div class="toast" role="status">
+        <p>{{ message }}</p>
+        <button type="button" class="toast-close" aria-label="Dismiss">×</button>
+    </div>
+    {% endif %}
+
     <main class="shell">
-        {% if message %}
-        <div class="toast" role="status">
-            <p>{{ message }}</p>
-            <button type="button" class="toast-close" aria-label="Dismiss">×</button>
-        </div>
-        {% endif %}
         {% block content %}{% endblock %}
     </main>
 
