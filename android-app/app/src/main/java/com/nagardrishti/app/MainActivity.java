@@ -67,6 +67,8 @@ public class MainActivity extends AppCompatActivity {
         settings.setMediaPlaybackRequiresUserGesture(true);
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
+        // Pinggy's free URL shows a browser interstitial unless the UA is non-generic.
+        settings.setUserAgentString(settings.getUserAgentString() + " NagardrishtiApp");
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -114,7 +116,23 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
         String host = uri.getHost();
-        return host != null && host.equalsIgnoreCase(appOrigin.getHost());
+        String originHost = appOrigin.getHost();
+        if (host == null || originHost == null) {
+            return false;
+        }
+        if (host.equalsIgnoreCase(originHost)) {
+            return true;
+        }
+        // Pinggy may bounce http/https or *.pinggy.link <-> *.pinggy-free.link on submit.
+        return pinggyFamily(host) && pinggyFamily(originHost);
+    }
+
+    private boolean pinggyFamily(String host) {
+        String h = host.toLowerCase(Locale.US);
+        return h.endsWith(".pinggy.link")
+                || h.endsWith(".pinggy-free.link")
+                || h.equals("pinggy.link")
+                || h.equals("pinggy-free.link");
     }
 
     private void requestRuntimePermissions() {

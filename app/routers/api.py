@@ -13,6 +13,7 @@ from ..security.session import require_citizen
 from ..security.validation import clamp_coords
 from ..services.ai import detect_category_from_bytes
 from ..services.images import ImageRejected, compress_upload
+from ..services.pending_photos import stash_pending_photo
 from ..services.store import get_store
 from ..web import redirect
 
@@ -30,6 +31,7 @@ async def api_detect_category(request: Request, file: UploadFile = File(...)):
         return JSONResponse({"suggested_id": None, "category_name": "Unknown", "error": "rate_limited"}, status_code=429)
     try:
         data = compress_upload(file)
+        stash_pending_photo(request, data)
         cat_id, cat_name = detect_category_from_bytes(data)
     except ImageRejected:
         return {"suggested_id": None, "category_name": "Unknown"}

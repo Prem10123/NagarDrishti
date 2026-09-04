@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 
 from ..security.csrf import csrf_guard
@@ -12,6 +14,7 @@ from ..security.validation import (
 )
 from ..services.ai import detect_category_from_bytes
 from ..services.images import ImageRejected, compress_upload
+from ..services.pending_photos import take_pending_photo
 from ..services.store import get_store
 from ..services.swachhata import SwachhataClient
 from ..views import STRICT_CATEGORIES
@@ -41,7 +44,7 @@ async def submit_report(
     description: str = Form(""),
     latitude: float = Form(0.0),
     longitude: float = Form(0.0),
-    file: UploadFile = File(...),
+    file: Optional[UploadFile] = File(None),
     force_submit: bool = Form(False),
 ):
     blocked = require_citizen(request)
@@ -68,7 +71,13 @@ async def submit_report(
     notes = normalize_description(description)
 
     try:
-        image_bytes = compress_upload(file)
+        has_upload = bool(file and file.filename)
+        if has_upload:
+            image_bytes = compress_upload(file)
+        else:
+            image_bytes = take_pending_photo(request)
+        if not image_bytes:
+            return redirect("/report", "Please attach a photo, then wait for AI before submitting.")
     except ImageRejected as exc:
         return redirect("/report", str(exc))
 

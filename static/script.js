@@ -33,12 +33,13 @@
     });
 
     document.querySelectorAll("form").forEach(function (form) {
+        if (form.id === "reportForm") return;
         form.addEventListener("submit", function () {
             var btn = form.querySelector("button[type=submit]");
             if (!btn || btn.dataset.busy) return;
             btn.dataset.busy = "1";
             btn.style.opacity = "0.72";
-            btn.textContent = btn.id === "submitReport" ? "Submitting…" : "Please wait…";
+            btn.textContent = "Please wait…";
         });
     });
 
@@ -53,9 +54,16 @@
 
     var aiSuggestedId = null;
 
+    var reportForm = document.getElementById("reportForm");
+    var compressedFile = null;
+    var photoPipeline = Promise.resolve();
+
     fileInput.addEventListener("change", function () {
+        compressedFile = null;
         showPreview();
-        autoDetectCategory();
+        photoPipeline = preparePhoto().then(function () {
+            return autoDetectCategory();
+        });
     });
     categorySelect.addEventListener("change", checkOverride);
     if (gpsBtn) gpsBtn.addEventListener("click", getLocation);
@@ -75,9 +83,19 @@
     dropzone.addEventListener("drop", function (e) {
         if (!e.dataTransfer.files.length) return;
         fileInput.files = e.dataTransfer.files;
+        compressedFile = null;
         showPreview();
-        autoDetectCategory();
+        photoPipeline = preparePhoto().then(function () {
+            return autoDetectCategory();
+        });
     });
+
+    if (reportForm) {
+        reportForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            submitReport(reportForm);
+        });
+    }
 
     function showPreview() {
         if (!fileInput.files.length || !preview) return;
@@ -94,7 +112,7 @@
         statusText.innerText = "AI is reading the photo…";
 
         var formData = new FormData();
-        formData.append("file", fileInput.files[0]);
+        formData.append("file", compressedFile || fileInput.files[0]);
 
         try {
             var csrf = document.querySelector('meta[name="csrf-token"]');
@@ -190,5 +208,84 @@
         var status = document.getElementById("geo-status");
         status.className = "hint text-danger";
         status.innerText = "Could not read GPS. Type the address instead.";
+    }
+
+    function preparePhoto() {
+        if (!fileInput.files.length) return Promise.resolve();
+        return compressPhoto(fileInput.files[0]).then(function (file) {
+            compressedFile = file;
+        });
+    }
+
+    function compressPhoto(file) {
+        if (!file || file.size < 350 * 1024) return Promise.resolve(file);
+        return new Promise(function (resolve) {
+            var url = URL.createObjectURL(file);
+            var img = new Image();
+            img.onload = function () {
+                var max = 1280;
+                var scale = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+                var canvas = document.createElement("canvas");
+                canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+                canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+                var ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                canvas.toBlob(function (blob) {
+                    URL.revokeObjectURL(url);
+                    if (!blob) {
+                        resolve(file);
+                        return;
+                    }
+                    resolve(new File([blob], "evidence.jpg", { type: "image/jpeg" }));
+                }, "image/jpeg", 0.78);
+            };
+            img.onerror = function () {
+                URL.revokeObjectURL(url);
+                resolve(file);
+            };
+            img.src = url;
+        });
+    }
+
+    async function submitReport(form) {
+        var btn = document.getElementById("submitReport");
+        if (btn && btn.dataset.busy) return;
+        if (btn) {
+            btn.dataset.busy = "1";
+            btn.style.opacity = "0.72";
+            btn.textContent = "Submitting…";
+        }
+        try {
+            if (!compressedFile && fileInput.files.length) {
+                compressedFile = await compressPhoto(fileInput.files[0]);
+            }
+            await photoPipeline;
+            var body = new FormData(form);
+            body.delete("file");
+            var csrf = document.querySelector('meta[name="csrf-token"]');
+            var headers = {};
+            if (csrf && csrf.content) headers["X-CSRF-Token"] = csrf.content;
+            var response = await fetch("/report", {
+                method: "POST",
+                body: body,
+                headers: headers,
+                credentials: "same-origin",
+                redirect: "follow"
+            });
+            if (!response.ok && response.status >= 500) {
+                throw new Error("server");
+            }
+            window.location.href = response.url || "/my-reports";
+        } catch (err) {
+            if (btn) {
+                delete btn.dataset.busy;
+                btn.style.opacity = "";
+                btn.textContent = "Submit report";
+            }
+            if (statusText) {
+                statusText.className = "hint ai-error";
+                statusText.innerText = "Submit failed on this connection. Wait a few seconds and try again with the same photo.";
+            }
+        }
     }
 })();
