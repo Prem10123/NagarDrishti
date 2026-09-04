@@ -24,14 +24,8 @@ CATEGORY_NAMES = {
     18: "Yellow Spot (Urination)",
 }
 
-STRICT_CATEGORIES = {
-    1: ["dog", "cat", "bird", "hen", "terrier", "beagle", "fox", "carcass", "animal", "shepherd", "retriever", "chihuahua", "corgi"],
-    2: ["ashcan", "trash_can", "waste_container", "bucket", "basket", "bin", "barrel", "mailbox"],
-    3: ["carton", "paper", "plastic_bag", "can", "bottle", "rubbish", "waste", "tissue", "packet", "wrapper", "crate", "box", "diaper"],
-    4: ["garbage_truck", "trailer_truck", "truck", "minivan", "van", "vehicle", "pickup", "tow_truck", "streetcar", "harvester"],
-    10: ["manhole", "sewer", "drain", "grate", "cover", "disk_brake", "strainer", "doormat", "stone", "concrete", "cliff", "hole", "puddle", "asphalt"],
-    15: ["fire", "lighter", "match", "stove", "smoke", "flame", "grill"],
-}
+# Categories the model can reasonably verify; mismatch requires an override.
+STRICT_CATEGORIES = {1, 2, 3, 4, 10, 15}
 
 
 @dataclass

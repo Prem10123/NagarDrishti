@@ -161,11 +161,14 @@
                 audio: false,
                 video: {
                     facingMode: { ideal: "environment" },
-                    width: { ideal: 1280, max: 1280 },
-                    height: { ideal: 720, max: 720 }
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
                 }
             });
             liveCamera.srcObject = cameraStream;
+            try {
+                await liveCamera.play();
+            } catch (playErr) { /* autoplay already set on the element */ }
             liveCamera.classList.remove("is-hidden");
             cameraBar.classList.remove("is-hidden");
             dropUi.classList.add("is-hidden");
@@ -181,16 +184,16 @@
             canvas.toBlob(function (blob) {
                 if (blob) resolve(blob);
                 else reject(new Error("jpeg"));
-            }, "image/jpeg", 0.72);
+            }, "image/jpeg", 0.88);
         });
     }
 
     async function snapCamera() {
-        if (!liveCamera || !liveCamera.videoWidth) {
+        if (!liveCamera || liveCamera.readyState < 2 || !liveCamera.videoWidth) {
             setStatus("ai-error", "Camera is still starting. Wait a second and tap Capture.");
             return;
         }
-        var max = 960;
+        var max = 1280;
         var scale = Math.min(1, max / Math.max(liveCamera.videoWidth, liveCamera.videoHeight));
         var canvas = document.createElement("canvas");
         canvas.width = Math.max(1, Math.round(liveCamera.videoWidth * scale));
@@ -211,8 +214,8 @@
         if (file.size < 220 * 1024 && file.type === "image/jpeg") return file;
         if (!window.createImageBitmap) throw new Error("no bitmap");
         var bmp = await createImageBitmap(file, {
-            resizeWidth: 960,
-            resizeQuality: "low"
+            resizeWidth: 1280,
+            resizeQuality: "high"
         });
         var canvas = document.createElement("canvas");
         canvas.width = bmp.width;
@@ -257,16 +260,27 @@
                 credentials: "same-origin"
             });
             var result = await response.json();
+            if (response.status === 401) {
+                statusText.className = "hint ai-error";
+                statusText.innerText = "Session expired. Log in again, then retake the photo.";
+                return;
+            }
+            if (response.status === 429) {
+                aiSuggestedId = null;
+                statusText.className = "hint ai-warning";
+                statusText.innerText = "Too many AI checks. Select a category manually, then try again shortly.";
+                return;
+            }
             if (result.suggested_id) {
                 categorySelect.value = String(result.suggested_id);
                 aiSuggestedId = String(result.suggested_id);
                 statusText.className = "hint ai-success";
-                statusText.innerText = "AI detected: " + result.category_name;
+                statusText.innerText = "AI suggested: " + result.category_name + ". Change it if that is wrong.";
                 hideForce();
             } else {
                 aiSuggestedId = null;
                 statusText.className = "hint ai-warning";
-                statusText.innerText = "AI could not detect the issue. Please select a category.";
+                statusText.innerText = "No clear match. Pick the closest category from the list.";
             }
         } catch (err) {
             statusText.className = "hint ai-error";

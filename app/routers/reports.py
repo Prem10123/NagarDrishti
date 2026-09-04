@@ -12,12 +12,11 @@ from ..security.validation import (
     normalize_description,
     parse_category_id,
 )
-from ..services.ai import detect_category_from_bytes
+from ..services.ai import detect_category_from_bytes, detection_is_strict
 from ..services.images import ImageRejected, compress_upload
 from ..services.pending_photos import take_pending_photo
 from ..services.store import get_store
 from ..services.swachhata import SwachhataClient
-from ..views import STRICT_CATEGORIES
 from ..web import redirect, render
 
 router = APIRouter(dependencies=[Depends(csrf_guard)])
@@ -82,11 +81,11 @@ async def submit_report(
         return redirect("/report", str(exc))
 
     try:
-        ai_id, ai_name = detect_category_from_bytes(image_bytes)
+        ai_id, ai_name, ai_conf = detect_category_from_bytes(image_bytes)
         submission_status = "Pending Sync"
         final_msg = "Report submitted successfully."
 
-        if ai_id and parsed_category in STRICT_CATEGORIES and ai_id != parsed_category:
+        if detection_is_strict(ai_id, ai_conf) and ai_id != parsed_category:
             if force_submit:
                 notes = f"[AI Flag: Detected {ai_name}] {notes}".strip()
                 submission_status = "Flagged"

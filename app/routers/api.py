@@ -32,7 +32,7 @@ async def api_detect_category(request: Request, file: UploadFile = File(...)):
     try:
         data = compress_upload(file)
         stash_pending_photo(request, data)
-        cat_id, cat_name = detect_category_from_bytes(data)
+        cat_id, cat_name, _conf = detect_category_from_bytes(data)
     except ImageRejected:
         return {"suggested_id": None, "category_name": "Unknown"}
     except Exception as exc:
