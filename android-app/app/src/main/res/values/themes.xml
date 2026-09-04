@@ -1,3 +1,10 @@
 <resources>
-    <style name="Theme.Nagardrishti" parent="Theme.AppCompat.Light.NoActionBar" />
+    <style name="Theme.Nagardrishti" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:statusBarColor">@color/nd_teal</item>
+        <item name="android:navigationBarColor">@color/nd_paper</item>
+        <item name="android:windowBackground">@color/nd_paper</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="colorPrimary">@color/nd_teal</item>
+        <item name="colorAccent">@color/nd_coral</item>
+    </style>
 </resources>

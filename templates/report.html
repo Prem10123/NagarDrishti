@@ -1,59 +1,80 @@
 {% extends "base.html" %}
+{% block title %}Report an issue · Nagardrishti{% endblock %}
+{% block body_class %}page-report{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card shadow-sm">
-            <div class="card-header bg-danger text-white">
-                <h4 class="mb-0">Report an urban issue</h4>
-            </div>
-            <div class="card-body">
-                <form action="/report" method="post" enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Photo evidence</label>
-                        <input type="file" name="file" id="imageUpload" class="form-control" accept="image/*" capture="environment" required>
-                        <small id="aiStatus" class="form-text text-muted">Upload a photo to auto-detect the category.</small>
-                    </div>
+<section class="page-head reveal">
+    <p class="eyebrow">New ticket</p>
+    <h1>Report an urban issue</h1>
+    <p>Photo first, then category and location. Takes about a minute.</p>
+</section>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold" for="categoryId">Category</label>
-                        <select name="category_id" id="categoryId" class="form-select" required>
-                            <option value="" disabled selected>Select category...</option>
-                            {% for cid, cname in categories.items() %}
-                            <option value="{{ cid }}">{{ cid }}. {{ cname }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div id="forceOption" class="mb-3 p-3 border border-warning bg-warning-subtle rounded d-none">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="force_submit" value="true" id="forceCheck">
-                            <label class="form-check-label fw-bold" for="forceCheck">
-                                AI disagrees. I confirm my category is correct.
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Location</label>
-                        <div class="input-group">
-                            <button type="button" class="btn btn-outline-primary" id="gpsBtn">Use GPS</button>
-                            <input type="text" name="address" id="address" class="form-control" placeholder="Address" required>
-                        </div>
-                        <small id="geo-status" class="form-text"></small>
-                        <input type="hidden" name="latitude" id="latitude" value="0.0">
-                        <input type="hidden" name="longitude" id="longitude" value="0.0">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Description</label>
-                        <textarea name="description" class="form-control" rows="3" placeholder="Describe the issue..."></textarea>
-                    </div>
-
-                    <button type="submit" class="btn btn-danger w-100 py-2">Submit report</button>
-                </form>
-            </div>
+<form action="/report" method="post" enctype="multipart/form-data" class="report-form glass-card reveal" id="reportForm" style="--d: 80ms">
+    <div class="dropzone" id="dropzone">
+        <input type="file" name="file" id="imageUpload" accept="image/*" capture="environment" required>
+        <div class="dropzone-ui" id="dropzoneUi">
+            <span class="dropzone-mark">↑</span>
+            <strong>Add photo evidence</strong>
+            <span>Tap to open camera or gallery</span>
         </div>
+        <img id="photoPreview" class="photo-preview is-hidden" alt="Selected evidence">
     </div>
-</div>
+    <p id="aiStatus" class="hint">AI will suggest a category after you pick a photo.</p>
+
+    <fieldset class="cat-field">
+        <legend>Category</legend>
+        <select name="category_id" id="categoryId" required>
+            <option value="" disabled selected>Select category…</option>
+            <optgroup label="Sanitation">
+                <option value="1">Dead animal(s)</option>
+                <option value="2">Dustbins not cleaned</option>
+                <option value="3">Garbage dump</option>
+                <option value="4">Garbage vehicle not arrived</option>
+                <option value="5">Sweeping not done</option>
+                <option value="15">Burning of garbage</option>
+            </optgroup>
+            <optgroup label="Public toilets">
+                <option value="6">No electricity in public toilet</option>
+                <option value="7">No water supply in public toilet</option>
+                <option value="8">Public toilet blockage</option>
+                <option value="9">Public toilet cleaning</option>
+                <option value="16">Open defecation</option>
+                <option value="18">Yellow spot (urination)</option>
+            </optgroup>
+            <optgroup label="Water &amp; roads">
+                <option value="10">Open manholes / potholes</option>
+                <option value="11">Overflow of sewerage</option>
+                <option value="12">Stagnant water</option>
+                <option value="13">Improper disposal of fecal waste</option>
+                <option value="17">Overflow of septic tanks</option>
+                <option value="14">Debris removal</option>
+            </optgroup>
+        </select>
+    </fieldset>
+
+    <div id="forceOption" class="force-box is-hidden">
+        <label class="check-row">
+            <input type="checkbox" name="force_submit" value="true" id="forceCheck">
+            <span>AI disagrees. I confirm this category is correct.</span>
+        </label>
+    </div>
+
+    <div class="loc-block">
+        <label for="address">Location</label>
+        <div class="loc-row">
+            <button type="button" class="btn btn-secondary" id="gpsBtn">Use GPS</button>
+            <input type="text" name="address" id="address" placeholder="Street, landmark, or ward" required>
+        </div>
+        <p id="geo-status" class="hint"></p>
+        <input type="hidden" name="latitude" id="latitude" value="0.0">
+        <input type="hidden" name="longitude" id="longitude" value="0.0">
+    </div>
+
+    <label class="desc-label">
+        <span>Description <em>(optional)</em></span>
+        <textarea name="description" rows="3" placeholder="What should crews know when they arrive?"></textarea>
+    </label>
+
+    <button type="submit" class="btn btn-accent btn-block btn-lg" id="submitReport">Submit report</button>
+</form>
 {% endblock %}

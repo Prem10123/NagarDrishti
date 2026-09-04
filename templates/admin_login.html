@@ -1,26 +1,26 @@
 {% extends "base.html" %}
+{% block title %}Admin login · Nagardrishti{% endblock %}
+{% block body_class %}page-auth{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-5">
-        <div class="card shadow-sm">
-            <div class="card-header bg-dark text-white">
-                <h4 class="mb-0">Admin login</h4>
-            </div>
-            <div class="card-body">
-                {% if error %}
-                <div class="alert alert-danger">{{ error }}</div>
-                {% endif %}
-                <p class="text-muted small">Use the <code>ADMIN_PASSWORD</code> from your <code>.env</code> file.</p>
-                <form action="/admin/login" method="post">
-                    <div class="mb-3">
-                        <label class="form-label" for="password">Admin password</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
-                    </div>
-                    <button type="submit" class="btn btn-dark w-100">Enter dashboard</button>
-                </form>
-            </div>
-        </div>
+<div class="auth-layout">
+    <aside class="auth-panel reveal">
+        <p class="eyebrow">Staff only</p>
+        <h1>Headquarters access</h1>
+        <p>Use the admin password from your <code>.env</code> file.</p>
+    </aside>
+    <div class="glass-card auth-card reveal" style="--d: 80ms">
+        <h2>Admin login</h2>
+        {% if error %}
+        <div class="banner banner-error">{{ error }}</div>
+        {% endif %}
+        <form action="/admin/login" method="post" class="stack-form">
+            <label>
+                <span>Admin password</span>
+                <input type="password" name="password" id="password" autocomplete="current-password" required>
+            </label>
+            <button type="submit" class="btn btn-primary btn-block">Enter dashboard</button>
+        </form>
     </div>
 </div>
 {% endblock %}

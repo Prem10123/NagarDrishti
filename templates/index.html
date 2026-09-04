@@ -1,26 +1,41 @@
 {% extends "base.html" %}
+{% block title %}Nagardrishti · See your city clearly{% endblock %}
+{% block body_class %}page-home{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-8 text-center">
-        <div class="card shadow-sm border-0 p-4 p-md-5">
-            <h1 class="display-5 text-primary fw-bold">Nagardrishti</h1>
-            <p class="lead mb-2">Report civic issues and track them from any device.</p>
-            <p class="text-muted">Garbage, potholes, drains, public toilets — photo, location, and a ticket in one place.</p>
-            <hr class="my-4">
-            {% if user %}
-            <p class="mb-4">Signed in as <strong>{{ user.full_name }}</strong></p>
-            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
-                <a href="/report" class="btn btn-primary btn-lg px-4">Report an Issue</a>
-                <a href="/my-reports" class="btn btn-outline-secondary btn-lg px-4">View Status</a>
-            </div>
-            {% else %}
-            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
-                <a href="/register" class="btn btn-primary btn-lg px-4">Create account</a>
-                <a href="/login" class="btn btn-outline-secondary btn-lg px-4">Login</a>
-            </div>
-            {% endif %}
-        </div>
+<section class="hero reveal">
+    <p class="eyebrow">Citizen reporting, rebuilt</p>
+    <h1>See it. Snap it.<br><em>Get it fixed.</em></h1>
+    <p class="lede">Garbage, potholes, drains, public toilets — photo, location, and a ticket in one calm, fast flow.</p>
+    {% if user %}
+    <p class="signed-in">Signed in as <strong>{{ user.full_name }}</strong></p>
+    <div class="hero-actions">
+        <a href="/report" class="btn btn-primary btn-lg">Report an issue</a>
+        <a href="/my-reports" class="btn btn-secondary btn-lg">Track status</a>
     </div>
-</div>
+    {% else %}
+    <div class="hero-actions">
+        <a href="/register" class="btn btn-primary btn-lg">Create account</a>
+        <a href="/login" class="btn btn-secondary btn-lg">Log in</a>
+    </div>
+    {% endif %}
+</section>
+
+<section class="feature-grid">
+    <article class="glass-card reveal" style="--d: 80ms">
+        <span class="icon-blob">1</span>
+        <h2>Photo first</h2>
+        <p>Upload evidence and let AI suggest the civic category so you spend less time tapping forms.</p>
+    </article>
+    <article class="glass-card reveal" style="--d: 160ms">
+        <span class="icon-blob">2</span>
+        <h2>Pin the spot</h2>
+        <p>One tap GPS locks the street, then you can still type a clearer landmark if you want.</p>
+    </article>
+    <article class="glass-card reveal" style="--d: 240ms">
+        <span class="icon-blob">3</span>
+        <h2>Follow through</h2>
+        <p>Your tickets travel with your login — phone, computer, or the Nagardrishti app.</p>
+    </article>
+</section>
 {% endblock %}

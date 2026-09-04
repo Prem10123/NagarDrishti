@@ -1,57 +1,134 @@
 (function () {
-    const fileInput = document.getElementById("imageUpload");
-    const categorySelect = document.getElementById("categoryId");
-    const statusText = document.getElementById("aiStatus");
-    const gpsBtn = document.getElementById("gpsBtn");
+    document.querySelectorAll(".toast-close").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            var toast = btn.closest(".toast");
+            if (toast) toast.remove();
+        });
+    });
+    var toast = document.querySelector(".toast");
+    if (toast) {
+        setTimeout(function () {
+            toast.style.opacity = "0";
+            toast.style.transform = "translate(-50%, -8px)";
+            toast.style.transition = "opacity 280ms ease, transform 280ms ease";
+            setTimeout(function () { toast.remove(); }, 300);
+        }, 4200);
+    }
+
+    document.querySelectorAll("[data-tabs]").forEach(function (root) {
+        var tabs = root.querySelectorAll(".tab");
+        tabs.forEach(function (tab) {
+            tab.addEventListener("click", function () {
+                tabs.forEach(function (t) {
+                    t.classList.toggle("is-active", t === tab);
+                    t.setAttribute("aria-selected", t === tab ? "true" : "false");
+                });
+                root.querySelectorAll(".tab-panel").forEach(function (panel) {
+                    var on = panel.id === "panel-" + tab.getAttribute("data-tab");
+                    panel.classList.toggle("is-active", on);
+                    panel.hidden = !on;
+                });
+            });
+        });
+    });
+
+    document.querySelectorAll("form").forEach(function (form) {
+        form.addEventListener("submit", function () {
+            var btn = form.querySelector("button[type=submit]");
+            if (!btn || btn.dataset.busy) return;
+            btn.dataset.busy = "1";
+            btn.style.opacity = "0.72";
+            btn.textContent = btn.id === "submitReport" ? "Submitting…" : "Please wait…";
+        });
+    });
+
+    var fileInput = document.getElementById("imageUpload");
+    var categorySelect = document.getElementById("categoryId");
+    var statusText = document.getElementById("aiStatus");
+    var gpsBtn = document.getElementById("gpsBtn");
+    var dropzone = document.getElementById("dropzone");
+    var preview = document.getElementById("photoPreview");
+    var dropUi = document.getElementById("dropzoneUi");
     if (!fileInput || !categorySelect) return;
 
-    let aiSuggestedId = null;
+    var aiSuggestedId = null;
 
-    fileInput.addEventListener("change", autoDetectCategory);
+    fileInput.addEventListener("change", function () {
+        showPreview();
+        autoDetectCategory();
+    });
     categorySelect.addEventListener("change", checkOverride);
     if (gpsBtn) gpsBtn.addEventListener("click", getLocation);
 
+    ["dragenter", "dragover"].forEach(function (evt) {
+        dropzone.addEventListener(evt, function (e) {
+            e.preventDefault();
+            dropzone.classList.add("is-hover");
+        });
+    });
+    ["dragleave", "drop"].forEach(function (evt) {
+        dropzone.addEventListener(evt, function (e) {
+            e.preventDefault();
+            dropzone.classList.remove("is-hover");
+        });
+    });
+    dropzone.addEventListener("drop", function (e) {
+        if (!e.dataTransfer.files.length) return;
+        fileInput.files = e.dataTransfer.files;
+        showPreview();
+        autoDetectCategory();
+    });
+
+    function showPreview() {
+        if (!fileInput.files.length || !preview) return;
+        var url = URL.createObjectURL(fileInput.files[0]);
+        preview.src = url;
+        preview.classList.remove("is-hidden");
+        if (dropUi) dropUi.classList.add("is-hidden");
+        dropzone.classList.add("has-photo");
+    }
+
     async function autoDetectCategory() {
         if (!fileInput.files.length) return;
-        statusText.className = "form-text ai-thinking";
-        statusText.innerText = "AI is analyzing image...";
+        statusText.className = "hint ai-thinking";
+        statusText.innerText = "AI is reading the photo…";
 
-        const formData = new FormData();
+        var formData = new FormData();
         formData.append("file", fileInput.files[0]);
 
         try {
-            const response = await fetch("/detect-category", { method: "POST", body: formData });
-            const result = await response.json();
+            var response = await fetch("/detect-category", { method: "POST", body: formData });
+            var result = await response.json();
             if (result.suggested_id) {
                 categorySelect.value = String(result.suggested_id);
                 aiSuggestedId = String(result.suggested_id);
-                statusText.className = "form-text ai-success";
+                statusText.className = "hint ai-success";
                 statusText.innerText = "AI detected: " + result.category_name;
                 hideForce();
             } else {
                 aiSuggestedId = null;
-                statusText.className = "form-text ai-warning";
+                statusText.className = "hint ai-warning";
                 statusText.innerText = "AI could not detect the issue. Please select a category.";
             }
         } catch (err) {
-            statusText.className = "form-text ai-error";
+            statusText.className = "hint ai-error";
             statusText.innerText = "AI service unavailable. Select a category manually.";
         }
     }
 
     function hideForce() {
-        const box = document.getElementById("forceOption");
-        const check = document.getElementById("forceCheck");
-        if (box) box.classList.add("d-none");
+        var box = document.getElementById("forceOption");
+        var check = document.getElementById("forceCheck");
+        if (box) box.classList.add("is-hidden");
         if (check) check.checked = false;
     }
 
     function checkOverride() {
-        const box = document.getElementById("forceOption");
-        const check = document.getElementById("forceCheck");
+        var box = document.getElementById("forceOption");
+        var check = document.getElementById("forceCheck");
         if (!box) return;
         if (aiSuggestedId && categorySelect.value && categorySelect.value !== aiSuggestedId) {
-            box.classList.remove("d-none");
+            box.classList.remove("is-hidden");
             if (check) check.checked = false;
         } else {
             hideForce();
@@ -59,13 +136,14 @@
     }
 
     function getLocation() {
-        const status = document.getElementById("geo-status");
+        var status = document.getElementById("geo-status");
         if (!navigator.geolocation) {
             status.innerText = "Geolocation is not supported in this browser.";
             return;
         }
-        status.className = "form-text";
-        status.innerText = "Locating...";
+        status.className = "hint";
+        status.innerText = "Locating…";
+        gpsBtn.disabled = true;
         navigator.geolocation.getCurrentPosition(showPosition, showError, {
             enableHighAccuracy: true,
             timeout: 15000,
@@ -73,18 +151,19 @@
     }
 
     async function showPosition(position) {
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
+        var lat = position.coords.latitude;
+        var lon = position.coords.longitude;
         document.getElementById("latitude").value = lat;
         document.getElementById("longitude").value = lon;
-        const status = document.getElementById("geo-status");
-        const address = document.getElementById("address");
+        var status = document.getElementById("geo-status");
+        var address = document.getElementById("address");
+        gpsBtn.disabled = false;
         try {
-            const response = await fetch("/api/reverse-geocode?lat=" + lat + "&lon=" + lon);
-            const data = await response.json();
+            var response = await fetch("/api/reverse-geocode?lat=" + lat + "&lon=" + lon);
+            var data = await response.json();
             if (data.address) {
                 address.value = data.address;
-                status.className = "form-text text-success";
+                status.className = "hint text-success";
                 status.innerText = "Location locked.";
             } else {
                 address.value = lat.toFixed(5) + ", " + lon.toFixed(5);
@@ -97,8 +176,9 @@
     }
 
     function showError() {
-        const status = document.getElementById("geo-status");
-        status.className = "form-text text-danger";
+        gpsBtn.disabled = false;
+        var status = document.getElementById("geo-status");
+        status.className = "hint text-danger";
         status.innerText = "Could not read GPS. Type the address instead.";
     }
 })();

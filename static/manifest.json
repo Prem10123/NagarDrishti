@@ -1,0 +1,17 @@
+{
+  "name": "Nagardrishti",
+  "short_name": "Nagardrishti",
+  "description": "Report civic issues and track them from any device.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4efe6",
+  "theme_color": "#0d4f4a",
+  "icons": [
+    {
+      "src": "/static/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

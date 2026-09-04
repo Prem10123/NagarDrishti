@@ -1,35 +1,36 @@
 {% extends "base.html" %}
+{% block title %}Join · Nagardrishti{% endblock %}
+{% block body_class %}page-auth{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-header bg-success text-white">
-                <h4 class="mb-0">Citizen Registration</h4>
-            </div>
-            <div class="card-body">
-                {% if error %}
-                <div class="alert alert-danger">{{ error }}</div>
-                {% endif %}
-                <form action="/register" method="post">
-                    <div class="mb-3">
-                        <label for="full_name" class="form-label">Full Name</label>
-                        <input type="text" class="form-control" id="full_name" name="full_name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="mobile_number" class="form-label">Mobile Number</label>
-                        <input type="tel" class="form-control" id="mobile_number" name="mobile_number" pattern="[0-9]{10}" placeholder="10-digit number" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" minlength="6" required>
-                        <div class="form-text">Use this password on any phone or computer to see the same reports.</div>
-                    </div>
-                    <button type="submit" class="btn btn-success w-100">Register</button>
-                </form>
-                <p class="mt-3 mb-0 text-center small">Already registered? <a href="/login">Log in</a></p>
-            </div>
-        </div>
+<div class="auth-layout">
+    <aside class="auth-panel reveal">
+        <p class="eyebrow">Get started</p>
+        <h1>One account. Every street.</h1>
+        <p>Register once, then file and track civic issues from any phone or computer.</p>
+    </aside>
+    <div class="glass-card auth-card reveal" style="--d: 80ms">
+        <h2>Create account</h2>
+        {% if error %}
+        <div class="banner banner-error">{{ error }}</div>
+        {% endif %}
+        <form action="/register" method="post" class="stack-form">
+            <label>
+                <span>Full name</span>
+                <input type="text" name="full_name" id="full_name" autocomplete="name" required>
+            </label>
+            <label>
+                <span>Mobile number</span>
+                <input type="tel" name="mobile_number" id="mobile_number" inputmode="numeric" autocomplete="tel" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit number" required>
+            </label>
+            <label>
+                <span>Password</span>
+                <input type="password" name="password" id="password" minlength="6" autocomplete="new-password" required>
+                <small>At least 6 characters. Use it on any device to see the same reports.</small>
+            </label>
+            <button type="submit" class="btn btn-primary btn-block">Create account</button>
+        </form>
+        <p class="form-foot">Already registered? <a href="/login">Log in</a></p>
     </div>
 </div>
 {% endblock %}

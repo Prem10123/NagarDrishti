@@ -1,31 +1,32 @@
 {% extends "base.html" %}
+{% block title %}Log in · Nagardrishti{% endblock %}
+{% block body_class %}page-auth{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-5">
-        <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">Citizen Login</h4>
-            </div>
-            <div class="card-body">
-                {% if error %}
-                <div class="alert alert-danger">{{ error }}</div>
-                {% endif %}
-                <form action="/login" method="post">
-                    <input type="hidden" name="next_url" value="{{ next_url or '/' }}">
-                    <div class="mb-3">
-                        <label class="form-label" for="mobile_number">Mobile Number</label>
-                        <input type="tel" class="form-control" id="mobile_number" name="mobile_number" pattern="[0-9]{10}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label" for="password">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Login</button>
-                </form>
-                <p class="mt-3 mb-0 text-center small">New here? <a href="/register">Create an account</a></p>
-            </div>
-        </div>
+<div class="auth-layout">
+    <aside class="auth-panel reveal">
+        <p class="eyebrow">Welcome back</p>
+        <h1>Your city, your tickets.</h1>
+        <p>Log in with the mobile number you registered. Same account on every device.</p>
+    </aside>
+    <div class="glass-card auth-card reveal" style="--d: 80ms">
+        <h2>Citizen login</h2>
+        {% if error %}
+        <div class="banner banner-error">{{ error }}</div>
+        {% endif %}
+        <form action="/login" method="post" class="stack-form">
+            <input type="hidden" name="next_url" value="{{ next_url or '/' }}">
+            <label>
+                <span>Mobile number</span>
+                <input type="tel" name="mobile_number" id="mobile_number" inputmode="numeric" autocomplete="tel" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit number" required>
+            </label>
+            <label>
+                <span>Password</span>
+                <input type="password" name="password" id="password" autocomplete="current-password" required>
+            </label>
+            <button type="submit" class="btn btn-primary btn-block">Continue</button>
+        </form>
+        <p class="form-foot">New here? <a href="/register">Create an account</a></p>
     </div>
 </div>
 {% endblock %}

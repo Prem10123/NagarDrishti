@@ -47,6 +47,8 @@ public class MainActivity extends AppCompatActivity {
         requestRuntimePermissions();
 
         webView = findViewById(R.id.webView);
+        webView.setBackgroundColor(0xFFF4EFE6);
+        webView.setOverScrollMode(WebView.OVER_SCROLL_NEVER);
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
 
