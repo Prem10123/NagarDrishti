@@ -10,7 +10,7 @@ from uuid import uuid4
 import httpx
 from PIL import Image
 from fastapi import FastAPI, File, Form, Request, UploadFile
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -46,10 +46,10 @@ app.add_middleware(
 )
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+templates.env.cache = None
 os.makedirs("static/uploads", exist_ok=True)
 
 store = get_store()
-print("Storage:", "Supabase cloud" if store.is_cloud else "local SQLite (set SUPABASE_URL to sync across devices)")
 try:
     api_client = swachhata_client.SwachhataClient()
 except Exception as exc:
@@ -64,7 +64,8 @@ def render(request: Request, name: str, **ctx):
     ctx["cloud_enabled"] = store.is_cloud
     ctx["message"] = ctx.get("message") or request.query_params.get("msg", "")
     ctx["categories"] = CATEGORY_NAMES
-    return templates.TemplateResponse(name, ctx)
+    html = templates.env.get_template(name).render(**ctx)
+    return HTMLResponse(html)
 
 
 def redirect(path: str, msg: str = ""):

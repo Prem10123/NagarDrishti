@@ -308,8 +308,11 @@ class CloudStore:
 def get_store():
     if config.CLOUD_ENABLED:
         try:
-            return CloudStore()
+            store = CloudStore()
+            print("Storage: Supabase cloud", flush=True)
+            return store
         except Exception as exc:
-            print(f"Cloud store failed, using local SQLite. {exc}")
+            print(f"Cloud store failed, using local SQLite. {exc}", flush=True)
             return LocalStore()
+    print("Storage: local SQLite (set SUPABASE_URL to sync across devices)", flush=True)
     return LocalStore()

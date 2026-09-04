@@ -1,9 +1,12 @@
 import os
 import secrets
 
+from pathlib import Path
+
 from dotenv import load_dotenv
 
-load_dotenv()
+ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(ROOT / ".env", override=True)
 
 SECRET_KEY = os.getenv("SECRET_KEY") or secrets.token_hex(32)
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip()

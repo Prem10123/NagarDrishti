@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Nagardrishti</string>
+    <!-- Change this to your public site, or http://YOUR_PC_LAN_IP:8000 for same-WiFi testing. -->
+    <string name="app_url">http://10.105.225.86:8000</string>
+</resources>

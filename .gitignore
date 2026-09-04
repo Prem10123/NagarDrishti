@@ -12,3 +12,8 @@ static/uploads/
 .env
 
 Nagardrishti_Master_Plan.txt
+
+android-app/.gradle/
+android-app/app/build/
+android-app/local.properties
+android-app/.idea/
