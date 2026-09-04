@@ -97,7 +97,15 @@
         formData.append("file", fileInput.files[0]);
 
         try {
-            var response = await fetch("/detect-category", { method: "POST", body: formData });
+            var csrf = document.querySelector('meta[name="csrf-token"]');
+            var headers = {};
+            if (csrf && csrf.content) headers["X-CSRF-Token"] = csrf.content;
+            var response = await fetch("/detect-category", {
+                method: "POST",
+                body: formData,
+                headers: headers,
+                credentials: "same-origin"
+            });
             var result = await response.json();
             if (result.suggested_id) {
                 categorySelect.value = String(result.suggested_id);
@@ -159,7 +167,9 @@
         var address = document.getElementById("address");
         gpsBtn.disabled = false;
         try {
-            var response = await fetch("/api/reverse-geocode?lat=" + lat + "&lon=" + lon);
+            var response = await fetch("/api/reverse-geocode?lat=" + lat + "&lon=" + lon, {
+                credentials: "same-origin"
+            });
             var data = await response.json();
             if (data.address) {
                 address.value = data.address;

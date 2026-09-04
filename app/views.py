@@ -67,7 +67,10 @@ class ComplaintView:
         url = self.image_url or ""
         if url.startswith("http://") or url.startswith("https://"):
             return url
-        return "/" + url.lstrip("/")
+        name = url.replace("\\", "/").rsplit("/", 1)[-1]
+        if name:
+            return "/media/" + name
+        return ""
 
     @property
     def created_label(self) -> str:

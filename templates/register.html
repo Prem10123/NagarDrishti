@@ -15,9 +15,10 @@
         <div class="banner banner-error">{{ error }}</div>
         {% endif %}
         <form action="/register" method="post" class="stack-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <label>
                 <span>Full name</span>
-                <input type="text" name="full_name" id="full_name" autocomplete="name" required>
+                <input type="text" name="full_name" id="full_name" autocomplete="name" maxlength="80" required>
             </label>
             <label>
                 <span>Mobile number</span>
@@ -25,8 +26,8 @@
             </label>
             <label>
                 <span>Password</span>
-                <input type="password" name="password" id="password" minlength="6" autocomplete="new-password" required>
-                <small>At least 6 characters. Use it on any device to see the same reports.</small>
+                <input type="password" name="password" id="password" minlength="8" maxlength="128" autocomplete="new-password" required>
+                <small>At least 8 characters. Use it on any device to see the same reports.</small>
             </label>
             <button type="submit" class="btn btn-primary btn-block">Create account</button>
         </form>

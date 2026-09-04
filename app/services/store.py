@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from typing import Optional
 from uuid import uuid4
 
-from . import config
-from .views import ComplaintView, UserView
+from .. import config
+from ..views import ComplaintView, UserView
+
+_LOCAL_FILE = re.compile(r"^[a-fA-F0-9]{32}\.jpg$")
 
 
 def _user_from_row(row: dict) -> UserView:
@@ -18,7 +21,7 @@ def _user_from_row(row: dict) -> UserView:
     )
 
 
-def _complaint_from_row(row: dict, owner: Optional[UserView] = None) -> ComplaintView:
+def _complaint_from_row(row: dict, owner: Optional[UserView] = None, image_url: Optional[str] = None) -> ComplaintView:
     return ComplaintView(
         id=row["id"],
         user_id=row.get("user_id"),
@@ -26,7 +29,7 @@ def _complaint_from_row(row: dict, owner: Optional[UserView] = None) -> Complain
         latitude=float(row.get("latitude") or 0),
         longitude=float(row.get("longitude") or 0),
         address=row.get("address") or "",
-        image_url=row.get("image_url") or "",
+        image_url=image_url if image_url is not None else (row.get("image_url") or ""),
         description=row.get("description"),
         status=row.get("status") or "Pending Sync",
         swachhata_complaint_id=row.get("swachhata_complaint_id"),
@@ -39,7 +42,7 @@ class LocalStore:
     is_cloud = False
 
     def get_user_by_mobile(self, mobile: str) -> Optional[UserView]:
-        from . import database, models
+        from .. import database, models
 
         db = database.SessionLocal()
         try:
@@ -57,7 +60,7 @@ class LocalStore:
             db.close()
 
     def get_user_by_id(self, user_id) -> Optional[UserView]:
-        from . import database, models
+        from .. import database, models
 
         db = database.SessionLocal()
         try:
@@ -75,7 +78,7 @@ class LocalStore:
             db.close()
 
     def create_user(self, full_name: str, mobile: str, password_hash: str, swachhata_user_id=None) -> UserView:
-        from . import database, models
+        from .. import database, models
 
         db = database.SessionLocal()
         try:
@@ -99,17 +102,13 @@ class LocalStore:
             db.close()
 
     def save_image(self, image_bytes: bytes, suffix: str = ".jpg") -> str:
-        import os
-
-        os.makedirs("static/uploads", exist_ok=True)
         name = f"{uuid4().hex}{suffix}"
-        path = os.path.join("static", "uploads", name)
-        with open(path, "wb") as handle:
-            handle.write(image_bytes)
-        return path.replace("\\", "/")
+        path = config.UPLOAD_DIR / name
+        path.write_bytes(image_bytes)
+        return name
 
     def create_complaint(self, **kwargs) -> ComplaintView:
-        from . import database, models
+        from .. import database, models
 
         db = database.SessionLocal()
         try:
@@ -144,7 +143,7 @@ class LocalStore:
             db.close()
 
     def list_complaints_for_user(self, user_id) -> list[ComplaintView]:
-        from . import database, models
+        from .. import database, models
 
         db = database.SessionLocal()
         try:
@@ -174,7 +173,7 @@ class LocalStore:
             db.close()
 
     def list_all_users(self) -> list[UserView]:
-        from . import database, models
+        from .. import database, models
 
         db = database.SessionLocal()
         try:
@@ -192,7 +191,7 @@ class LocalStore:
             db.close()
 
     def list_all_complaints(self) -> list[ComplaintView]:
-        from . import database, models
+        from .. import database, models
 
         db = database.SessionLocal()
         try:
@@ -224,6 +223,45 @@ class LocalStore:
                     )
                 )
             return result
+        finally:
+            db.close()
+
+    def user_can_view_image(self, user_id, filename: str) -> bool:
+        from .. import database, models
+
+        if not _LOCAL_FILE.fullmatch(filename):
+            return False
+        db = database.SessionLocal()
+        try:
+            row = (
+                db.query(models.Complaint)
+                .filter(models.Complaint.user_id == user_id)
+                .filter(
+                    (models.Complaint.image_url == filename)
+                    | (models.Complaint.image_url.endswith("/" + filename))
+                )
+                .first()
+            )
+            return bool(row)
+        finally:
+            db.close()
+
+    def image_exists(self, filename: str) -> bool:
+        from .. import database, models
+
+        if not _LOCAL_FILE.fullmatch(filename):
+            return False
+        db = database.SessionLocal()
+        try:
+            row = (
+                db.query(models.Complaint)
+                .filter(
+                    (models.Complaint.image_url == filename)
+                    | (models.Complaint.image_url.endswith("/" + filename))
+                )
+                .first()
+            )
+            return bool(row)
         finally:
             db.close()
 
@@ -273,13 +311,39 @@ class CloudStore:
             image_bytes,
             file_options={"content-type": "image/jpeg", "x-upsert": "false"},
         )
-        public = self.client.storage.from_(self.bucket).get_public_url(path)
-        return public
+        return path
+
+    def _storage_path(self, stored: str) -> str:
+        if not stored:
+            return ""
+        if stored.startswith("http://") or stored.startswith("https://"):
+            marker = f"/object/public/{self.bucket}/"
+            if marker in stored:
+                return stored.split(marker, 1)[1].split("?")[0]
+            sign_marker = f"/object/sign/{self.bucket}/"
+            if sign_marker in stored:
+                return stored.split(sign_marker, 1)[1].split("?")[0]
+            return stored
+        return stored
+
+    def _signed_url(self, stored: str) -> str:
+        path = self._storage_path(stored)
+        if not path:
+            return ""
+        if path.startswith("http://") or path.startswith("https://"):
+            return path
+        try:
+            res = self.client.storage.from_(self.bucket).create_signed_url(path, 60 * 60)
+            return res.get("signedURL") or res.get("signedUrl") or ""
+        except Exception as exc:
+            print(f"Signed URL failed: {exc}")
+            return ""
 
     def create_complaint(self, **kwargs) -> ComplaintView:
         payload = {key: value for key, value in kwargs.items() if value is not None}
         res = self.client.table("complaints").insert(payload).execute()
-        return _complaint_from_row(res.data[0])
+        row = res.data[0]
+        return _complaint_from_row(row, image_url=self._signed_url(row.get("image_url") or ""))
 
     def list_complaints_for_user(self, user_id) -> list[ComplaintView]:
         res = (
@@ -289,7 +353,10 @@ class CloudStore:
             .order("id", desc=True)
             .execute()
         )
-        return [_complaint_from_row(row) for row in (res.data or [])]
+        return [
+            _complaint_from_row(row, image_url=self._signed_url(row.get("image_url") or ""))
+            for row in (res.data or [])
+        ]
 
     def list_all_users(self) -> list[UserView]:
         res = self.client.table("users").select("id, full_name, mobile_number, swachhata_user_id").execute()
@@ -301,18 +368,38 @@ class CloudStore:
         out = []
         for row in res.data or []:
             owner = users.get(row.get("user_id"))
-            out.append(_complaint_from_row(row, owner=owner))
+            out.append(
+                _complaint_from_row(
+                    row,
+                    owner=owner,
+                    image_url=self._signed_url(row.get("image_url") or ""),
+                )
+            )
         return out
+
+    def user_can_view_image(self, user_id, filename: str) -> bool:
+        return False
+
+    def image_exists(self, filename: str) -> bool:
+        return False
+
+
+_store = None
 
 
 def get_store():
+    global _store
+    if _store is not None:
+        return _store
     if config.CLOUD_ENABLED:
         try:
-            store = CloudStore()
+            _store = CloudStore()
             print("Storage: Supabase cloud", flush=True)
-            return store
+            return _store
         except Exception as exc:
             print(f"Cloud store failed, using local SQLite. {exc}", flush=True)
-            return LocalStore()
+            _store = LocalStore()
+            return _store
     print("Storage: local SQLite (set SUPABASE_URL to sync across devices)", flush=True)
-    return LocalStore()
+    _store = LocalStore()
+    return _store

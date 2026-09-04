@@ -8,6 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="color-scheme" content="dark">
     <meta name="apple-mobile-web-app-title" content="Nagardrishti">
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <title>{% block title %}Nagardrishti{% endblock %}</title>
     <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
     <link rel="manifest" href="/static/manifest.json">
@@ -48,7 +49,10 @@
         <div class="topbar-actions">
             {% if user %}
             <span class="user-chip" title="{{ user.full_name }}">{{ user.full_name.split(' ')[0] }}</span>
-            <a class="btn btn-ghost btn-sm" href="/logout">Log out</a>
+            <form action="/logout" method="post" class="inline-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="btn btn-ghost btn-sm">Log out</button>
+            </form>
             {% else %}
             <a class="btn btn-ghost btn-sm" href="/login">Log in</a>
             <a class="btn btn-primary btn-sm" href="/register">Join</a>
@@ -56,8 +60,8 @@
         </div>
     </header>
 
-    {% if not cloud_enabled %}
-    <div class="sys-banner">Local mode — add Supabase keys in <code>.env</code> to sync across devices.</div>
+    {% if is_admin and not cloud_enabled %}
+    <div class="sys-banner">Local mode — cloud sync is not configured.</div>
     {% endif %}
 
     <main class="shell">

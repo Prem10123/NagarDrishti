@@ -15,6 +15,7 @@
         <div class="banner banner-error">{{ error }}</div>
         {% endif %}
         <form action="/login" method="post" class="stack-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input type="hidden" name="next_url" value="{{ next_url or '/' }}">
             <label>
                 <span>Mobile number</span>

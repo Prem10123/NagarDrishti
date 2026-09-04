@@ -9,7 +9,10 @@
         <h1>Admin dashboard</h1>
         <p>{{ complaints|length }} reports · {{ users|length }} citizens</p>
     </div>
-    <a class="btn btn-ghost" href="/admin/logout">Admin logout</a>
+    <form action="/admin/logout" method="post" class="inline-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn-ghost">Admin logout</button>
+    </form>
 </section>
 
 <div class="tabs reveal" data-tabs>

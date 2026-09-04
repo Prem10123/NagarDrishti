@@ -7,6 +7,7 @@ __pycache__/
 
 # Ignore user uploads
 static/uploads/
+var/uploads/
 
 # Ignore Environment secrets (if we had them)
 .env

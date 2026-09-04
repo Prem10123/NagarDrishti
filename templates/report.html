@@ -10,6 +10,7 @@
 </section>
 
 <form action="/report" method="post" enctype="multipart/form-data" class="report-form glass-card reveal" id="reportForm" style="--d: 80ms">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <div class="dropzone" id="dropzone">
         <input type="file" name="file" id="imageUpload" accept="image/*" capture="environment" required>
         <div class="dropzone-ui" id="dropzoneUi">
@@ -63,7 +64,7 @@
         <label for="address">Location</label>
         <div class="loc-row">
             <button type="button" class="btn btn-secondary" id="gpsBtn">Use GPS</button>
-            <input type="text" name="address" id="address" placeholder="Street, landmark, or ward" required>
+            <input type="text" name="address" id="address" maxlength="400" placeholder="Street, landmark, or ward" required>
         </div>
         <p id="geo-status" class="hint"></p>
         <input type="hidden" name="latitude" id="latitude" value="0.0">
@@ -72,7 +73,7 @@
 
     <label class="desc-label">
         <span>Description <em>(optional)</em></span>
-        <textarea name="description" rows="3" placeholder="What should crews know when they arrive?"></textarea>
+        <textarea name="description" rows="3" maxlength="2000" placeholder="What should crews know when they arrive?"></textarea>
     </label>
 
     <button type="submit" class="btn btn-accent btn-block btn-lg" id="submitReport">Submit report</button>

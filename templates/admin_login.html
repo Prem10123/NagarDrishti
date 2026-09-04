@@ -7,7 +7,7 @@
     <aside class="auth-panel reveal">
         <p class="eyebrow">Staff only</p>
         <h1>Headquarters access</h1>
-        <p>Use the admin password from your <code>.env</code> file.</p>
+        <p>Staff credentials are issued separately from citizen accounts.</p>
     </aside>
     <div class="glass-card auth-card reveal" style="--d: 80ms">
         <h2>Admin login</h2>
@@ -15,9 +15,14 @@
         <div class="banner banner-error">{{ error }}</div>
         {% endif %}
         <form action="/admin/login" method="post" class="stack-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <label>
-                <span>Admin password</span>
-                <input type="password" name="password" id="password" autocomplete="current-password" required>
+                <span>Username</span>
+                <input type="text" name="username" id="username" autocomplete="username" required>
+            </label>
+            <label>
+                <span>Password</span>
+                <input type="password" name="password" id="password" autocomplete="current-password" maxlength="128" required>
             </label>
             <button type="submit" class="btn btn-primary btn-block">Enter dashboard</button>
         </form>

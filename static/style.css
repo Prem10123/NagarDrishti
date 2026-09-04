@@ -123,6 +123,8 @@ a:hover { color: #fff; }
 }
 
 .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.inline-form { display: inline; margin: 0; }
+.inline-form button { font: inherit; }
 .user-chip {
     max-width: 120px;
     overflow: hidden;

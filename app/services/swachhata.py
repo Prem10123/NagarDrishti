@@ -1,8 +1,7 @@
-import os
 import random
 import string
 
-from . import config
+from .. import config
 
 
 class SwachhataClient:
@@ -16,7 +15,6 @@ class SwachhataClient:
         if not self.live:
             print(f"[Swachhata simulated] Registering {name} ({mobile})")
             return random.randint(100000, 999999)
-        # Real HTTP wiring can be added when official credentials are issued.
         print(f"[Swachhata] Would register {name} at {self.api_url}")
         return random.randint(100000, 999999)
 
